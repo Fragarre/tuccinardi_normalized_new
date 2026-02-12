@@ -20,7 +20,7 @@ from numpy.linalg import norm
 #-------------------------------------------------------------
 Texto_dudoso = "declamationes"
 Autor_conocido = "quintilliano"
-ngrams = 3
+ngrams = 4
 k_limit = 500
 fragmentos = 2000
 resumen = (f"resumen_{Autor_conocido}_{ngrams}.txt")
@@ -28,6 +28,7 @@ data_ciertos = (f"data_{Autor_conocido}/textos_ciertos/")
 data_dudoso=(f"data_{Autor_conocido}/texto_dudoso/")
 obras_ciertas = "Institutiones"
 obra_dudosa = "Declamationes"
+resultados_dir = (f"resultados_{Autor_conocido}_{ngrams}")
 # ------------------------------------------------------------
 # 1. CARGA DE DATOS
 # ------------------------------------------------------------
@@ -197,7 +198,7 @@ def inferencia_zscore(sim_author, sim_doubtful):
     }
 
 
-def resultados(sim_author, sim_doubtful, output_dir="resultados"):
+def resultados(sim_author, sim_doubtful, output_dir=resultados_dir):
     """
     Genera:
     - Resumen estadístico (media, desviación estándar)
@@ -377,7 +378,7 @@ def main():
     zip_autor = data_ciertos+Autor_conocido+".zip"
     print(zip_autor)
     texto_dudoso_dir = data_dudoso
-    output_dir = "resultados"
+    output_dir = resultados_dir
 
     # === PARÁMETROS EXPERIMENTALES ===
     n = ngrams
