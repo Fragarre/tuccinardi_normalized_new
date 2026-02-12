@@ -18,16 +18,16 @@ from numpy.linalg import norm
 #-------------------------------------------------------------
 # Variables
 #-------------------------------------------------------------
-Texto_dudoso = "dialogus"
-Autor_conocido = "tacito"
+Texto_dudoso = "metamorphoses"
+Autor_conocido = "ovidio"
 ngrams = 4
 k_limit = 500
 fragmentos = 2000
 resumen = (f"resumen_{Autor_conocido}_{ngrams}.txt")
 data_ciertos = (f"data_{Autor_conocido}/textos_ciertos/")
 data_dudoso=(f"data_{Autor_conocido}/texto_dudoso/")
-obras_ciertas = "agricola, annales, germania, historiae"
-obra_dudosa = "dialogus"
+obras_ciertas = "amores, heroidas, ars amandi"
+obra_dudosa = Texto_dudoso
 resultados_dir = (f"resultados_{Autor_conocido}_{ngrams}")
 # ------------------------------------------------------------
 # 1. CARGA DE DATOS
