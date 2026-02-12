@@ -1,6 +1,6 @@
 .venv
-limpiio
-original
+limpio/
+original/
 interpretacion.docx
-resultados*
-data*
+resultados*/
+data*/
