@@ -18,16 +18,16 @@ from numpy.linalg import norm
 #-------------------------------------------------------------
 # Variables
 #-------------------------------------------------------------
-Texto_dudoso = "declamationes"
-Autor_conocido = "quintilliano"
+Texto_dudoso = "dialogus"
+Autor_conocido = "tacito"
 ngrams = 4
 k_limit = 500
 fragmentos = 2000
 resumen = (f"resumen_{Autor_conocido}_{ngrams}.txt")
 data_ciertos = (f"data_{Autor_conocido}/textos_ciertos/")
 data_dudoso=(f"data_{Autor_conocido}/texto_dudoso/")
-obras_ciertas = "Institutiones"
-obra_dudosa = "Declamationes"
+obras_ciertas = "agricola, annales, germania, historiae"
+obra_dudosa = "dialogus"
 resultados_dir = (f"resultados_{Autor_conocido}_{ngrams}")
 # ------------------------------------------------------------
 # 1. CARGA DE DATOS
@@ -305,15 +305,15 @@ def resultados(sim_author, sim_doubtful, output_dir=resultados_dir):
     inferencia = inferencia_zscore(sim_author, sim_doubtful)
 
     with open(resumen_path, "w", encoding="utf-8") as f:
-        f.write("RESULTADOS SPI – VERIFICACIÓN DE AUTORÍA\n")
+        f.write("RESULTADOS SPI – COMPARARCION DE TEXTOS\n")
         f.write("=" * 45 + "\n\n")
 
         # Parámetros experimentales
-        f.write("PARÁMETROS DEL EXPERIMENTO\n")
+        f.write("PARÁMETROS\n")
         f.write("-" * 30 + "\n")
         f.write(f"Autor conocido: {Autor_conocido}\n")
         f.write(f"Obras Ciertas: {obras_ciertas}\n")
-        f.write(f"Obra a Comprobar: {obra_dudosa}\n")
+        f.write(f"Obras a Comprobar: {obra_dudosa}\n")
         f.write(f"N-gramas: {ngrams}\n")
         f.write(f"Top-k: {k_limit}\n")
         f.write(f"Tamaño de fragmento: {fragmentos}\n\n")

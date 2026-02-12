@@ -1,0 +1,21 @@
+RESULTADOS SPI – VERIFICACIÓN DE AUTORÍA
+=============================================
+
+PARÁMETROS DEL EXPERIMENTO
+------------------------------
+Autor conocido: seneca
+Obras Ciertas: epistulae morales, de ira, de beneficiis
+Obra a Comprobar: Apocolocyntosis
+N-gramas: 3
+Top-k: 500
+Tamaño de fragmento: 2000
+
+RESULTADOS DESCRIPTIVOS
+------------------------------
+seneca_media: 0.7868
+seneca_std: 0.0303
+
+Apocolocyntosis_media: 0.7853
+Apocolocyntosis_std: 0.0313
+
+Diferencia absoluta entre medias: 0.0015

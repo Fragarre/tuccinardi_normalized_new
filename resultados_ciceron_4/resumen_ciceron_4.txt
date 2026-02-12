@@ -1,0 +1,21 @@
+RESULTADOS SPI – VERIFICACIÓN DE AUTORÍA
+=============================================
+
+PARÁMETROS DEL EXPERIMENTO
+------------------------------
+Autor conocido: ciceron
+Obras Ciertas: de inventione, de oratore, orator, tusculanae, brutus
+Obra a Comprobar: Rhetorica
+N-gramas: 4
+Top-k: 500
+Tamaño de fragmento: 2000
+
+RESULTADOS DESCRIPTIVOS
+------------------------------
+ciceron_media: 0.5672
+ciceron_std: 0.0539
+
+Rhetorica_media: 0.5281
+Rhetorica_std: 0.0601
+
+Diferencia absoluta entre medias: 0.0391
