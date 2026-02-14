@@ -18,15 +18,15 @@ from numpy.linalg import norm
 #-------------------------------------------------------------
 # Variables
 #-------------------------------------------------------------
-Texto_dudoso = "metamorphoses"
-Autor_conocido = "ovidio"
-ngrams = 4
+Texto_dudoso = "rhetorica"
+Autor_conocido = "ciceron"
+ngrams = 3
 k_limit = 500
-fragmentos = 2000
+fragmentos = 2800
 resumen = (f"resumen_{Autor_conocido}_{ngrams}.txt")
 data_ciertos = (f"data_{Autor_conocido}/textos_ciertos/")
 data_dudoso=(f"data_{Autor_conocido}/texto_dudoso/")
-obras_ciertas = "amores, heroidas, ars amandi"
+obras_ciertas = "brutus, deOratore, orator, tuwculanae"
 obra_dudosa = Texto_dudoso
 resultados_dir = (f"resultados_{Autor_conocido}_{ngrams}")
 # ------------------------------------------------------------
@@ -53,6 +53,16 @@ def load_doubtful_text(folder_path):
                 return f.read()
     raise FileNotFoundError("No se encontró texto dudoso (.txt)")
 
+# ------------------------------------------------------------
+# 1.b MÉTRICAS DE TAMAÑO
+# ------------------------------------------------------------
+
+def contar_palabras(texto):
+    """
+    Cuenta palabras separadas por espacios.
+    Método simple y robusto para texto latino.
+    """
+    return len(texto.split())
 
 # ------------------------------------------------------------
 # 2. N-GRAMAS Y PERFILES
@@ -161,7 +171,10 @@ def spi_analysis(author_texts, doubtful_text,
             sim_author.append(s1)
             sim_doubtful.append(s2)
 
-    return sim_author, sim_doubtful
+    total_fragmentos = len(fragments)
+    fragmentos_validos = len(fragment_profiles)
+
+    return sim_author, sim_doubtful, total_fragmentos, fragmentos_validos
 
 
 # ------------------------------------------------------------
@@ -197,8 +210,50 @@ def inferencia_zscore(sim_author, sim_doubtful):
         "critico_95": critico_95
     }
 
+# ------------------------------------------------------------
+# INTERVALO DE CONFIANZA DE LA MEDIA AUTORAL (95 %)
+# ------------------------------------------------------------
 
-def resultados(sim_author, sim_doubtful, output_dir=resultados_dir):
+def intervalo_confianza_autor(sim_author, alpha=0.05):
+    """
+    Calcula el intervalo de confianza bilateral del 95 %
+    para la media de similitud del autor.
+    """
+
+    mu = mean(sim_author)
+    sigma = stdev(sim_author)
+    n = len(sim_author)
+
+    error_std = sigma / sqrt(n)
+
+    if n >= 30:
+        # aproximación normal
+        critico = normal_dist.ppf(1 - alpha / 2)
+        distribucion = "normal"
+    else:
+        # t de Student
+        critico = student_t.ppf(1 - alpha / 2, n - 1)
+        distribucion = "t"
+
+    inferior = mu - critico * error_std
+    superior = mu + critico * error_std
+
+    return {
+        "media": mu,
+        "inferior": inferior,
+        "superior": superior,
+        "n": n,
+        "distribucion": distribucion
+    }
+
+
+def resultados(sim_author, sim_doubtful,
+               palabras_autor,
+               palabras_dudoso,
+               porcentaje,
+               total_fragmentos,
+               fragmentos_validos,
+               output_dir=resultados_dir):
     """
     Genera:
     - Resumen estadístico (media, desviación estándar)
@@ -304,6 +359,8 @@ def resultados(sim_author, sim_doubtful, output_dir=resultados_dir):
     # --------------------------------------------------------
     inferencia = inferencia_zscore(sim_author, sim_doubtful)
 
+    ic_autor = intervalo_confianza_autor(sim_author)
+
     with open(resumen_path, "w", encoding="utf-8") as f:
         f.write("RESULTADOS SPI – COMPARARCION DE TEXTOS\n")
         f.write("=" * 45 + "\n\n")
@@ -318,9 +375,54 @@ def resultados(sim_author, sim_doubtful, output_dir=resultados_dir):
         f.write(f"Top-k: {k_limit}\n")
         f.write(f"Tamaño de fragmento: {fragmentos}\n\n")
 
+        f.write("INTERVALO DE CONFIANZA DEL AUTOR (95%)\n")
+        f.write("-" * 30 + "\n")
+        f.write(f"Media autor: {ic_autor['media']:.4f}\n")
+        f.write(f"Límite inferior: {ic_autor['inferior']:.4f}\n")
+        f.write(f"Límite superior: {ic_autor['superior']:.4f}\n")
+        f.write(f"n fragmentos: {ic_autor['n']}\n")
+        f.write(f"Distribución usada: {ic_autor['distribucion']}\n\n")
+        dentro_ic = (
+        stats["dudoso_media"] >= ic_autor["inferior"]
+        and stats["dudoso_media"] <= ic_autor["superior"]
+        )
+
+        f.write("COMPATIBILIDAD CON EL AUTOR\n")
+        f.write("-" * 30 + "\n")
+
+        # if dentro_ic:
+        #     f.write("La media del texto dudoso cae DENTRO del IC95 del autor.\n")
+        # else:
+        #     f.write("La media del texto dudoso cae FUERA del IC95 del autor.\n")
+
+        if dentro_ic:
+            f.write(
+                "Conclusión: la media del texto dudoso cae DENTRO del intervalo de "
+                "confianza del 95 % del autor.\n"
+            )
+        else:
+            f.write(
+                "Conclusión: la media del texto dudoso cae FUERA del intervalo de "
+                "confianza del 95 % del autor.\n"
+            )
+
+        f.write("\n")
+
         # Resultados numéricos dinámicos
         f.write("RESULTADOS DESCRIPTIVOS\n")
         f.write("-" * 30 + "\n")
+
+        f.write("\nTAMAÑO DEL CORPUS\n")
+        f.write("-" * 30 + "\n")
+        f.write(f"Palabras textos ciertos: {palabras_autor}\n")
+        f.write(f"Palabras texto dudoso: {palabras_dudoso}\n")
+        f.write(f"Porcentaje dudoso / ciertos: {porcentaje:.2f}%\n\n")
+
+        f.write("FRAGMENTACIÓN\n")
+        f.write("-" * 30 + "\n")
+        f.write(f"Total fragmentos generados: {total_fragmentos}\n")
+        f.write(f"Fragmentos válidos usados en SPI: {fragmentos_validos}\n")
+        f.write(f"Tamaño de fragmento configurado: {fragmentos}\n\n")
 
         f.write(f"{Autor_conocido}_media: {stats['autor_media']:.4f}\n")
         f.write(f"{Autor_conocido}_std: {stats['autor_std']:.4f}\n\n")
@@ -330,7 +432,6 @@ def resultados(sim_author, sim_doubtful, output_dir=resultados_dir):
 
         diff = abs(stats["autor_media"] - stats["dudoso_media"])
         f.write(f"Diferencia absoluta entre medias: {diff:.4f}\n")
-
 
     # --------------------------------------------------------
     # Gráfico Z-score
@@ -370,6 +471,56 @@ def resultados(sim_author, sim_doubtful, output_dir=resultados_dir):
     return stats
 
 # ------------------------------------------------------------
+# 8. ANÁLISIS DE SENSIBILIDAD DEL TAMAÑO DE FRAGMENTO
+# ------------------------------------------------------------
+
+def sensibilidad_fragmento(author_texts, doubtful_text,
+                           tamaños,
+                           n=ngrams, top_k=k_limit,
+                           output_dir=resultados_dir):
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    z_values = []
+    frag_counts = []
+
+    for size in tamaños:
+
+        sim_author, sim_doubtful, total_frag, frag_valid = spi_analysis(
+            author_texts,
+            doubtful_text,
+            n=n,
+            top_k=top_k,
+            fragment_size=size
+        )
+
+        # evitar casos sin datos suficientes
+        if len(sim_author) < 2 or len(sim_doubtful) < 2:
+            z_values.append(np.nan)
+            frag_counts.append(total_frag)
+            continue
+
+        infer = inferencia_zscore(sim_author, sim_doubtful)
+
+        z_values.append(infer["z_dudoso"])
+        frag_counts.append(total_frag)
+
+    # ------------------ gráfico ------------------
+    plt.figure(figsize=(7, 5))
+    plt.plot(tamaños, z_values, marker="o")
+    plt.xlabel("Tamaño de fragmento (caracteres)")
+    plt.ylabel("z-score del texto dudoso")
+    plt.title("Sensibilidad del z-score al tamaño de fragmento")
+    plt.grid(True)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "sensibilidad_fragmento.png"), dpi=300)
+    plt.close()
+
+    return tamaños, z_values, frag_counts
+
+
+# ------------------------------------------------------------
 # 7. MAIN
 # ------------------------------------------------------------
 
@@ -387,17 +538,63 @@ def main():
     author_texts = load_author_texts(zip_autor)
     doubtful_text = load_doubtful_text(texto_dudoso_dir)
 
-    # print(f"PARAMETROS *************AUTOR {author_texts} DUDOSO {doubtful_text}")
+    # =========================
+    # CÁLCULO DE TAMAÑOS
+    # =========================
 
-    sim_author, sim_doubtful = spi_analysis(
-        author_texts,
-        doubtful_text,
-        n=n,
-        top_k=top_k,
-        fragment_size=fragmentos
+    full_author_text = " ".join(author_texts)
+
+    palabras_autor = contar_palabras(full_author_text)
+    palabras_dudoso = contar_palabras(doubtful_text)
+
+    porcentaje = (palabras_dudoso / palabras_autor) * 100
+
+    print("\n--- TAMAÑO DE CORPUS ---")
+    print(f"Palabras textos ciertos: {palabras_autor}")
+    print(f"Palabras texto dudoso: {palabras_dudoso}")
+    print(f"Porcentaje dudoso / ciertos: {porcentaje:.2f}%")
+
+    sim_author, sim_doubtful, total_fragmentos, fragmentos_validos = spi_analysis(
+    author_texts,
+    doubtful_text,
+    n=n,
+    top_k=top_k,
+    fragment_size=fragmentos
+)
+
+    print("\n--- FRAGMENTACIÓN ---")
+    print(f"Total fragmentos generados: {total_fragmentos}")
+    print(f"Fragmentos válidos usados en SPI: {fragmentos_validos}")
+
+    stats = resultados(
+    sim_author,
+    sim_doubtful,
+    palabras_autor,
+    palabras_dudoso,
+    porcentaje,
+    total_fragmentos,
+    fragmentos_validos,
+    output_dir
     )
 
-    stats = resultados(sim_author, sim_doubtful, output_dir)
+    # =========================
+    # ANÁLISIS DE SENSIBILIDAD
+    # =========================
+
+    tamaños_prueba = [500, 1000, 1500, 2000, 2500, 3000, 4000, 5000]
+
+    sensibilidad_fragmento(
+        author_texts,
+        doubtful_text,
+        tamaños_prueba,
+        n=n,
+        top_k=top_k,
+        output_dir=output_dir
+    )
+
+    print("\nGráfico de sensibilidad guardado en:",
+        os.path.join(output_dir, "sensibilidad_fragmento.png"))
+
 
     print("\n--- RESUMEN ---")
     for k, v in stats.items():
